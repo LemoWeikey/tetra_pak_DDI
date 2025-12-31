@@ -298,14 +298,13 @@ try:
             lambda x: x[:30] + '...' if len(x) > 30 else x
         )
 
-        # Create horizontal bar chart with BOTH bars per product (like HTML)
-        # Using subplots with secondary_x for dual x-axes
-        fig_products = make_subplots(
-            specs=[[{"secondary_x": True}]],
-            horizontal_spacing=0.1
-        )
+        # Create horizontal bar chart with BOTH bars per product
+        # Note: Plotly doesn't support dual x-axes for horizontal bars like Chart.js
+        # Using grouped bars with actual values (shared scale)
 
-        # Add Amount bars (primary x-axis at bottom)
+        fig_products = go.Figure()
+
+        # Add Amount bars
         fig_products.add_trace(
             go.Bar(
                 y=product_data['name_short'],
@@ -315,12 +314,14 @@ try:
                 marker_color='rgba(16, 185, 129, 0.8)',
                 marker_line_color='rgba(16, 185, 129, 1)',
                 marker_line_width=2,
-                offsetgroup=0
-            ),
-            secondary_x=False
+                text=product_data['Amount'].apply(lambda x: f'${x:,.0f}'),
+                textposition='outside',
+                textfont=dict(color='#10b981'),
+                hovertemplate='<b>%{y}</b><br>Amount: $%{x:,.0f}<extra></extra>'
+            )
         )
 
-        # Add Volume bars (secondary x-axis at top)
+        # Add Volume bars
         fig_products.add_trace(
             go.Bar(
                 y=product_data['name_short'],
@@ -330,9 +331,11 @@ try:
                 marker_color='rgba(245, 158, 11, 0.8)',
                 marker_line_color='rgba(245, 158, 11, 1)',
                 marker_line_width=2,
-                offsetgroup=1
-            ),
-            secondary_x=True
+                text=product_data['quantity'].apply(lambda x: f'{x:,.0f}'),
+                textposition='outside',
+                textfont=dict(color='#f59e0b'),
+                hovertemplate='<b>%{y}</b><br>Volume: %{x:,.0f}<extra></extra>'
+            )
         )
 
         fig_products.update_layout(
@@ -340,26 +343,15 @@ try:
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color='#e2e8f0'),
-            barmode='group',  # Group mode shows 2 bars per product
+            barmode='group',
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            yaxis=dict(gridcolor='rgba(0,0,0,0)')
-        )
-
-        # Update x-axes
-        fig_products.update_xaxes(
-            title_text="<b>Amount (USD)</b>",
-            title_font=dict(color="#10b981", size=14),
-            gridcolor='rgba(148, 163, 184, 0.1)',
-            secondary_x=False,
-            side='bottom'
-        )
-        fig_products.update_xaxes(
-            title_text="<b>Volume (Quantity)</b>",
-            title_font=dict(color="#f59e0b", size=14),
-            gridcolor='rgba(0,0,0,0)',
-            secondary_x=True,
-            side='top',
-            overlaying='x'
+            xaxis=dict(
+                title="<b>Value</b>",
+                titlefont=dict(size=14),
+                gridcolor='rgba(148, 163, 184, 0.1)'
+            ),
+            yaxis=dict(gridcolor='rgba(0,0,0,0)'),
+            showlegend=True
         )
 
         st.plotly_chart(fig_products, use_container_width=True)
