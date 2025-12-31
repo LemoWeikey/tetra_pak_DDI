@@ -1,7 +1,9 @@
 *.pyc
 __pycache__/
 .ipynb_checkpoints/
+# Ignore JSON files except tetra_pak_data.json (needed for dashboard)
 *.json
+!tetra_pak_data.json
 .env
 .venv/
 venv/
