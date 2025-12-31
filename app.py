@@ -12,66 +12,102 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- LIGHT THEME CSS ---
+# --- DARK THEME CSS (Matching Netlify Dashboard) ---
 st.markdown("""
 <style>
     /* Global Styles */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
+
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
-        color: #1e293b; /* Dark text */
+        color: #e2e8f0;
     }
 
-    /* Main Background */
+    /* Main Background - Matching Netlify gradient */
     .stApp {
-        background: #f8fafc; /* Light gray background */
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
     }
 
-    /* Headers */
+    /* Background Overlay Effect */
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background:
+            radial-gradient(circle at 20% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Headers - Exact Netlify gradient */
     h1 {
-        background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%); /* Indigo to Cyan */
+        background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         font-weight: 700 !important;
         font-size: 3rem !important;
         text-align: center;
         padding-bottom: 0.5rem;
+        letter-spacing: -1px;
     }
-    
+
     .header-subtitle {
         text-align: center;
-        color: #64748b; /* Slate 500 */
+        color: #94a3b8;
         font-size: 1.1em;
-        font-weight: 400;
+        font-weight: 300;
         margin-bottom: 2rem;
     }
 
-    /* Stats Cards */
+    /* Stats Cards - Glass-morphism dark theme */
     div[data-testid="stMetric"] {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        background: rgba(30, 41, 59, 0.5);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(148, 163, 184, 0.1);
         border-radius: 16px;
-        padding: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
+        padding: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
     }
-    
+
+    div[data-testid="stMetric"]::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    div[data-testid="stMetric"]:hover::before {
+        transform: scaleX(1);
+    }
+
     div[data-testid="stMetric"]:hover {
         transform: translateY(-5px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        border-color: #6366f1;
+        border-color: rgba(139, 92, 246, 0.3);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
     }
 
     div[data-testid="stMetric"] label {
-        color: #64748b !important;
+        color: #94a3b8 !important;
         font-size: 0.85em !important;
         text-transform: uppercase;
         letter-spacing: 1px;
+        font-weight: 500;
     }
 
     div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-        color: #0f172a !important; /* Dark Slate 900 */
+        color: #fff !important;
         font-weight: 700 !important;
         font-size: 2em !important;
     }
@@ -80,34 +116,87 @@ st.markdown("""
     .section-header {
         font-size: 1.8em;
         font-weight: 600;
-        color: #1e293b;
+        color: #fff;
         text-align: center;
         margin: 40px 0 20px 0;
         padding: 15px 0;
-        border-top: 2px solid #e2e8f0;
-        border-bottom: 2px solid #e2e8f0;
+        border-top: 2px solid rgba(139, 92, 246, 0.3);
+        border-bottom: 2px solid rgba(139, 92, 246, 0.3);
     }
-    
-    /* Charts Container */
+
+    /* Charts Container - Glass-morphism */
     .chart-box {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        background: rgba(30, 41, 59, 0.5);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(148, 163, 184, 0.1);
         border-radius: 16px;
-        padding: 20px;
+        padding: 25px;
         margin-bottom: 25px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
         transition: all 0.3s;
     }
-    
+
     .chart-box:hover {
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        border-color: #6366f1;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        border-color: rgba(139, 92, 246, 0.3);
     }
-    
+
+    /* Streamlit Components Dark Theme */
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="base-input"] > div {
+        background-color: rgba(30, 41, 59, 0.5) !important;
+        border-color: rgba(148, 163, 184, 0.2) !important;
+        color: #e2e8f0 !important;
+    }
+
+    /* Radio buttons */
+    div[role="radiogroup"] label {
+        background-color: rgba(30, 41, 59, 0.5) !important;
+        border: 1px solid rgba(148, 163, 184, 0.1) !important;
+        border-radius: 8px !important;
+        color: #e2e8f0 !important;
+        padding: 8px 16px !important;
+    }
+
+    div[role="radiogroup"] label:hover {
+        border-color: rgba(139, 92, 246, 0.5) !important;
+        background-color: rgba(51, 65, 85, 0.5) !important;
+    }
+
+    /* Checkbox styling */
+    div[data-testid="stCheckbox"] label {
+        color: #e2e8f0 !important;
+    }
+
+    /* Info/Warning boxes */
+    div[data-testid="stMarkdownContainer"] p {
+        color: #e2e8f0;
+    }
+
+    div.stAlert {
+        background-color: rgba(30, 41, 59, 0.7) !important;
+        border: 1px solid rgba(139, 92, 246, 0.3) !important;
+        color: #e2e8f0 !important;
+    }
+
     /* Remove streamlit menus */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #1e293b;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+        border-radius: 10px;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -136,7 +225,7 @@ if df is None:
 
 # --- HEADER ---
 st.markdown("<h1>Tetra Pak Analytics Dashboard</h1>", unsafe_allow_html=True)
-st.markdown("<p class='header-subtitle'>Real-time insights and performance metrics (Light Mode)</p>", unsafe_allow_html=True)
+st.markdown("<p class='header-subtitle'>Real-time insights and performance metrics</p>", unsafe_allow_html=True)
 
 
 # --- SECTION 1 & GLOBAL STATS FILTER ---
@@ -197,44 +286,44 @@ if not df_s1.empty:
 
     fig_trend = make_subplots(specs=[[{"secondary_y": True}]])
     
-    # Amount Line
+    # Amount Line (matching HTML dashboard)
     fig_trend.add_trace(
         go.Scatter(
             x=daily_data['Transaction Date'],
             y=daily_data['Amount'],
             name="Total Amount (USD)",
-            line=dict(color='#4f46e5', width=3), # Indigo
+            line=dict(color='#1f77b4', width=3),
             fill='tozeroy',
-            fillcolor='rgba(79, 70, 229, 0.1)'
+            fillcolor='rgba(31, 119, 180, 0.1)'
         ), secondary_y=False
     )
-    
-    # Volume Line
+
+    # Volume Line (matching HTML dashboard)
     fig_trend.add_trace(
         go.Scatter(
             x=daily_data['Transaction Date'],
             y=daily_data['quantity'],
             name=f"Quantity ({current_units_label})",
-            line=dict(color='#06b6d4', width=3, dash='dot'), # Cyan
+            line=dict(color='#ff7f0e', width=3, dash='dot'),
             fill='tozeroy',
-            fillcolor='rgba(6, 182, 212, 0.1)'
+            fillcolor='rgba(255, 127, 14, 0.1)'
         ), secondary_y=True
     )
 
     fig_trend.update_layout(
-        title=dict(text=f"Financial vs Volume Analysis", font=dict(color="#1e293b", size=16)),
+        title=dict(text=f"Financial vs Volume Analysis", font=dict(color="#e2e8f0", size=16)),
         hovermode='x unified',
-        plot_bgcolor='white',
-        paper_bgcolor='white', 
-        font=dict(color='#1e293b'),
+        plot_bgcolor='rgba(15, 23, 42, 0.3)',
+        paper_bgcolor='rgba(0, 0, 0, 0)',
+        font=dict(color='#94a3b8'),
         height=500,
         margin=dict(l=20, r=20, t=50, b=20),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color='#e2e8f0'))
     )
-    
-    fig_trend.update_xaxes(showgrid=True, gridcolor='#e2e8f0')
-    fig_trend.update_yaxes(title_text="Total Amount (USD)", title_font=dict(color="#4f46e5"), secondary_y=False, showgrid=True, gridcolor='#e2e8f0')
-    fig_trend.update_yaxes(title_text="Quantity", title_font=dict(color="#06b6d4"), secondary_y=True, showgrid=False)
+
+    fig_trend.update_xaxes(showgrid=True, gridcolor='rgba(148, 163, 184, 0.1)')
+    fig_trend.update_yaxes(title_text="Total Amount (USD)", title_font=dict(color="#1f77b4", weight='bold'), secondary_y=False, showgrid=True, gridcolor='rgba(148, 163, 184, 0.1)')
+    fig_trend.update_yaxes(title_text="Quantity", title_font=dict(color="#ff7f0e", weight='bold'), secondary_y=True, showgrid=False)
 
     st.markdown("<div class='chart-box'>", unsafe_allow_html=True)
     st.plotly_chart(fig_trend, use_container_width=True)
@@ -273,32 +362,34 @@ with col_charts_1:
     
     fig_sup = make_subplots(specs=[[{"secondary_y": True}]])
     
-    # Amount Bar
+    # Amount Bar (matching HTML dashboard)
     fig_sup.add_trace(go.Bar(
-        x=supplier_data['Supplier'], y=supplier_data['Amount'], name='Amount',
-        marker_color='rgba(79, 70, 229, 0.9)', # Indigo
+        x=supplier_data['Supplier'], y=supplier_data['Amount'], name='Amount (USD)',
+        marker_color='rgba(139, 92, 246, 0.8)',
+        marker_line=dict(color='rgba(139, 92, 246, 1)', width=2),
         offsetgroup=1
     ), secondary_y=False)
-    
-    # Volume Bar
+
+    # Volume Bar (matching HTML dashboard)
     fig_sup.add_trace(go.Bar(
         x=supplier_data['Supplier'], y=supplier_data['quantity'], name='Volume',
-        marker_color='rgba(6, 182, 212, 0.9)', # Cyan
+        marker_color='rgba(59, 130, 246, 0.8)',
+        marker_line=dict(color='rgba(59, 130, 246, 1)', width=2),
         offsetgroup=2
     ), secondary_y=True)
-    
+
     fig_sup.update_layout(
-        title=dict(text="Top 4 Suppliers", font=dict(color="#1e293b", size=16)),
-        plot_bgcolor='white',
-        paper_bgcolor='white', 
-        font=dict(color='#1e293b'),
+        title=dict(text="Top 4 Suppliers", font=dict(color="#e2e8f0", size=16)),
+        plot_bgcolor='rgba(15, 23, 42, 0.3)',
+        paper_bgcolor='rgba(0, 0, 0, 0)',
+        font=dict(color='#94a3b8'),
         height=450,
         barmode='group',
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color='#e2e8f0'))
     )
     fig_sup.update_xaxes(showgrid=False)
-    fig_sup.update_yaxes(title_text="Amount", secondary_y=False, showgrid=True, gridcolor='#e2e8f0')
-    fig_sup.update_yaxes(title_text="Volume", secondary_y=True, showgrid=False)
+    fig_sup.update_yaxes(title_text="Amount (USD)", title_font=dict(color="#8b5cf6", weight='bold'), secondary_y=False, showgrid=True, gridcolor='rgba(148, 163, 184, 0.1)')
+    fig_sup.update_yaxes(title_text="Volume (Quantity)", title_font=dict(color="#3b82f6", weight='bold'), secondary_y=True, showgrid=False)
     
     st.markdown("<div class='chart-box'>", unsafe_allow_html=True)
     st.plotly_chart(fig_sup, use_container_width=True)
@@ -330,8 +421,8 @@ with col_charts_2:
     values = cat_data['Amount'] if pie_mode == 'Amount' else cat_data['quantity']
     
     # Standard Pie Chart (Visual Only)
-    # Colors: Professional Palette
-    pie_colors = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+    # Colors: Matching HTML dashboard exactly
+    pie_colors = ['#8b5cf6', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f97316']
     
     # 1. Sort Data Explicitly (Deterministic Order)
     cat_data['sort_val'] = values
@@ -353,12 +444,12 @@ with col_charts_2:
     )])
     
     fig_pie.update_layout(
-        title=dict(text="Category Distribution", font=dict(color="#1e293b", size=16)),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        font=dict(color='#1e293b'),
+        title=dict(text="Category Distribution", font=dict(color="#e2e8f0", size=16)),
+        plot_bgcolor='rgba(0, 0, 0, 0)',
+        paper_bgcolor='rgba(0, 0, 0, 0)',
+        font=dict(color='#e2e8f0'),
         height=400,
-        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1),
+        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1, font=dict(color='#e2e8f0', size=11)),
         margin=dict(t=30, b=10, l=10, r=10),
     )
     
@@ -405,46 +496,48 @@ with col_charts_3:
     # Dual Axis Horizontal Bar
     fig_prod = go.Figure()
 
-    # Amount (Axis 1 - Bottom)
+    # Amount (Axis 1 - Bottom) - matching HTML dashboard
     fig_prod.add_trace(go.Bar(
-        y=prod_agg['short_name'], 
-        x=prod_agg['Amount'], 
-        name='Amount (USD)', 
+        y=prod_agg['short_name'],
+        x=prod_agg['Amount'],
+        name='Amount (USD)',
         orientation='h',
-        marker_color='rgba(16, 185, 129, 0.9)', # Emerald
+        marker_color='rgba(16, 185, 129, 0.8)',
+        marker_line=dict(color='rgba(16, 185, 129, 1)', width=2),
         offsetgroup=1
     ))
-    
-    # Volume (Axis 2 - Top)
+
+    # Volume (Axis 2 - Top) - matching HTML dashboard
     fig_prod.add_trace(go.Bar(
-        y=prod_agg['short_name'], 
-        x=prod_agg['quantity'], 
-        name='Volume', 
+        y=prod_agg['short_name'],
+        x=prod_agg['quantity'],
+        name='Volume',
         orientation='h',
-        marker_color='rgba(245, 158, 11, 0.9)', # Amber
+        marker_color='rgba(245, 158, 11, 0.8)',
+        marker_line=dict(color='rgba(245, 158, 11, 1)', width=2),
         offsetgroup=2,
         xaxis='x2'
     ))
-    
+
     fig_prod.update_layout(
-        title=dict(text=f"Top 5 Products", font=dict(color="#1e293b", size=16)),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        font=dict(color='#1e293b'),
+        title=dict(text=f"Top 5 Products", font=dict(color="#e2e8f0", size=16)),
+        plot_bgcolor='rgba(15, 23, 42, 0.3)',
+        paper_bgcolor='rgba(0, 0, 0, 0)',
+        font=dict(color='#94a3b8'),
         height=450,
         barmode='group',
-        legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1),
+        legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color='#e2e8f0')),
         xaxis=dict(
             title="Amount (USD)",
-            title_font=dict(color="#10b981"),
-            tickfont=dict(color="#10b981"),
+            title_font=dict(color="#10b981", weight='bold'),
+            tickfont=dict(color='#94a3b8'),
             showgrid=True,
-            gridcolor='#e2e8f0',
+            gridcolor='rgba(148, 163, 184, 0.1)',
         ),
         xaxis2=dict(
             title="Volume",
-            title_font=dict(color="#f59e0b"),
-            tickfont=dict(color="#f59e0b"),
+            title_font=dict(color="#f59e0b", weight='bold'),
+            tickfont=dict(color='#94a3b8'),
             showgrid=False,
             overlaying='x',
             side='top'
@@ -467,32 +560,37 @@ with col_charts_4:
     full_date_range = pd.date_range(start=df_s2['Transaction Date'].min(), end=df_s2['Transaction Date'].max(), freq='D')
     
     fig_comp = go.Figure()
-    # Light theme colors
-    colors = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b']
-    
+    # Colors matching HTML dashboard exactly
+    colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b']
+
     for i, sup in enumerate(top_sups):
         sup_df = df_s2[df_s2['Supplier'] == sup]
         sup_daily = sup_df.groupby('Transaction Date').agg({'Amount': 'sum', 'quantity': 'sum'}).reindex(full_date_range).fillna(0).reset_index()
         sup_daily.rename(columns={'index': 'Transaction Date'}, inplace=True)
 
         y_val = sup_daily['Amount'] if trend_mode == 'Amount' else sup_daily['quantity']
-        
+
         fig_comp.add_trace(go.Scatter(
             x=sup_daily['Transaction Date'], y=y_val, name=sup,
             line=dict(color=colors[i%len(colors)], width=3)
         ))
-        
+
     fig_comp.update_layout(
-        title=dict(text="Top 4 Suppliers Trend (Continuous)", font=dict(color="#1e293b", size=16)),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        font=dict(color='#1e293b'),
+        title=dict(text="Top 4 Suppliers Trend (Continuous)", font=dict(color="#e2e8f0", size=16)),
+        plot_bgcolor='rgba(15, 23, 42, 0.3)',
+        paper_bgcolor='rgba(0, 0, 0, 0)',
+        font=dict(color='#94a3b8'),
         height=450,
         hovermode='x unified',
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color='#e2e8f0'))
     )
-    fig_comp.update_xaxes(showgrid=True, gridcolor='#e2e8f0')
-    fig_comp.update_yaxes(showgrid=True, gridcolor='#e2e8f0')
+    fig_comp.update_xaxes(showgrid=True, gridcolor='rgba(148, 163, 184, 0.1)')
+    fig_comp.update_yaxes(
+        showgrid=True,
+        gridcolor='rgba(148, 163, 184, 0.1)',
+        title_text="Amount (USD)" if trend_mode == 'Amount' else "Volume (Quantity)",
+        title_font=dict(color="#8b5cf6", weight='bold')
+    )
     
     st.plotly_chart(fig_comp, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
