@@ -163,6 +163,30 @@ st.markdown("""
         background-color: rgba(51, 65, 85, 0.5) !important;
     }
 
+    /* Toggle Buttons Styling (matching HTML dashboard) */
+    div[data-testid="column"] button {
+        background: rgba(51, 65, 85, 0.3) !important;
+        border: none !important;
+        border-radius: 8px !important;
+        color: #94a3b8 !important;
+        font-weight: 600 !important;
+        padding: 10px 24px !important;
+        transition: all 0.3s !important;
+    }
+
+    div[data-testid="column"] button:hover {
+        background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%) !important;
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4) !important;
+        transform: translateY(-2px);
+    }
+
+    /* Active state for buttons */
+    div[data-testid="column"] button:active {
+        background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%) !important;
+        color: white !important;
+    }
+
     /* Checkbox styling */
     div[data-testid="stCheckbox"] label {
         color: #e2e8f0 !important;
@@ -195,6 +219,31 @@ st.markdown("""
     ::-webkit-scrollbar-thumb {
         background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
         border-radius: 10px;
+    }
+
+    /* Fix plotly_events iframe and container background */
+    iframe[title="streamlit_plotly_events.plotly_events"] {
+        background: transparent !important;
+    }
+
+    /* Target the stale element marker that plotly_events creates */
+    div[data-stale="false"] > div > iframe {
+        background: transparent !important;
+    }
+
+    /* All iframes in chart boxes should be transparent */
+    .chart-box iframe {
+        background: transparent !important;
+    }
+
+    /* Plotly events wrapper */
+    div[data-testid="stVerticalBlock"] iframe {
+        background: transparent !important;
+    }
+
+    /* Plotly modebar (chart tools) styling */
+    .modebar {
+        display: none !important;
     }
 
 </style>
@@ -395,96 +444,117 @@ with col_charts_1:
     st.plotly_chart(fig_sup, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# 2. Category Distribution (Pie)
+# 2. Category Distribution (Pie) - Click to Filter!
 with col_charts_2:
-    
+    st.markdown("<div class='chart-box'>", unsafe_allow_html=True)
+
     # Initialize Session State
     if "selected_category" not in st.session_state:
-        st.session_state["selected_category"] = "All"
+        st.session_state["selected_category"] = None
+    if "pie_mode" not in st.session_state:
+        st.session_state["pie_mode"] = "Amount"
 
-    st.markdown("#### Filter Products by Category")
-    
+    # Toggle buttons for Amount/Volume
+    col_toggle1, col_toggle2 = st.columns(2)
+    with col_toggle1:
+        if st.button("Amount", key="pie_amount_btn", use_container_width=True):
+            st.session_state["pie_mode"] = "Amount"
+    with col_toggle2:
+        if st.button("Volume", key="pie_volume_btn", use_container_width=True):
+            st.session_state["pie_mode"] = "Volume"
+
+    pie_mode = st.session_state.get("pie_mode", "Amount")
+
     cat_data = df_s2.groupby('category_group').agg({'Amount': 'sum', 'quantity': 'sum'}).reset_index()
-    cats_for_filter = ["All"] + sorted(cat_data['category_group'].unique().tolist())
-    
-    # --- Quick Filter Buttons (Reliable One-Click Filtering) ---
-    st.write("**Filter Products by Category:**")
-    manual_cat_select = st.radio(
-        "Select Category:", 
-        options=cats_for_filter, 
-        key="selected_category", 
-        horizontal=True, 
-        label_visibility="collapsed"
-    )
-
-    pie_mode = st.radio("View Pie by:", ["Amount", "Volume"], horizontal=True, key="pie_mode")
     values = cat_data['Amount'] if pie_mode == 'Amount' else cat_data['quantity']
-    
-    # Standard Pie Chart (Visual Only)
+
     # Colors: Matching HTML dashboard exactly
     pie_colors = ['#8b5cf6', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f97316']
-    
-    # 1. Sort Data Explicitly (Deterministic Order)
+
+    # Sort Data Explicitly (Deterministic Order)
     cat_data['sort_val'] = values
     cat_data = cat_data.sort_values('sort_val', ascending=False).reset_index(drop=True)
-    
-    # Update values to look at the sorted column
-    sorted_values = cat_data['sort_val']
-    sorted_labels = cat_data['category_group']
-    
+
+    # Calculate percentages for labels
+    total = cat_data['sort_val'].sum()
+    sorted_labels_with_pct = [f"{label} ({(val/total*100):.1f}%)"
+                               for label, val in zip(cat_data['category_group'], cat_data['sort_val'])]
+
     fig_pie = go.Figure(data=[go.Pie(
-        labels=sorted_labels,
-        values=sorted_values,
+        labels=sorted_labels_with_pct,
+        values=cat_data['sort_val'],
         hole=0.4,
-        marker=dict(colors=pie_colors),
+        marker=dict(
+            colors=pie_colors,
+            line=dict(color='#1e293b', width=3)
+        ),
         textinfo='percent',
+        textfont=dict(size=12, color='#fff', family='Inter'),
         textposition='inside',
         insidetextorientation='horizontal',
-        sort=False 
+        hovertemplate='<b>%{label}</b><br>Value: %{value:,.0f}<extra></extra>',
+        sort=False
     )])
-    
+
     fig_pie.update_layout(
-        title=dict(text="Category Distribution", font=dict(color="#e2e8f0", size=16)),
+        title=dict(text="Category Distribution", font=dict(color="#e2e8f0", size=16, weight='bold')),
         plot_bgcolor='rgba(0, 0, 0, 0)',
         paper_bgcolor='rgba(0, 0, 0, 0)',
         font=dict(color='#e2e8f0'),
         height=400,
-        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1, font=dict(color='#e2e8f0', size=11)),
-        margin=dict(t=30, b=10, l=10, r=10),
+        showlegend=True,
+        legend=dict(
+            orientation="v",
+            yanchor="middle",
+            y=0.5,
+            xanchor="left",
+            x=1.02,
+            font=dict(color='#e2e8f0', size=11),
+            bgcolor='rgba(0, 0, 0, 0)',
+            itemsizing='constant'
+        ),
+        margin=dict(t=50, b=10, l=10, r=120),
     )
-    
-    # Simplified interaction - Visual Only
-    st.plotly_chart(
-        fig_pie, 
-        use_container_width=True, 
-        key="pie_visual_final",
-        config={"displayModeBar": False} 
+
+    # Interactive Pie Chart - Click to filter!
+    event = st.plotly_chart(
+        fig_pie,
+        use_container_width=True,
+        key="pie_chart_interactive",
+        on_select="rerun",
+        selection_mode="points"
     )
-    
+
+    # Handle click event
+    if event and "selection" in event and "points" in event["selection"]:
+        points = event["selection"]["points"]
+        if len(points) > 0:
+            point_index = points[0]["point_index"]
+            clicked_category = cat_data['category_group'].iloc[point_index]
+            if st.session_state.get("selected_category") != clicked_category:
+                st.session_state["selected_category"] = clicked_category
+                st.rerun()
+
     st.markdown("</div>", unsafe_allow_html=True)
 
 
 # --- Row 2 of Charts ---
 col_charts_3, col_charts_4 = st.columns(2)
 
-# 3. Top 5 Products
+# 3. Top 5 Products (Filtered by Category Click)
 with col_charts_3:
     st.markdown("<div class='chart-box'>", unsafe_allow_html=True)
-    
-    # Use State (Source of Truth set by Radio)
-    cat_filter_val = st.session_state["selected_category"]
 
-    # UI for Filter Status
-    if cat_filter_val != "All":
-        st.markdown(f"**Filtered by Category:** <span style='color:#4f46e5; font-size:1.1em; font-weight:bold;'>{cat_filter_val}</span>", unsafe_allow_html=True)
-    else:
-        st.markdown("**Top 5 Products (All Categories)**")
-    
+    # Use State from pie chart click
+    cat_filter_val = st.session_state.get("selected_category", None)
+
     # Logic to filter DataFrame
-    if cat_filter_val != 'All':
-         prod_df = df_s2[df_s2['category_group'] == cat_filter_val]
+    if cat_filter_val and cat_filter_val != "All":
+        prod_df = df_s2[df_s2['category_group'] == cat_filter_val]
+        chart_title = f"Top 5 in {cat_filter_val}"
     else:
-         prod_df = df_s2
+        prod_df = df_s2
+        chart_title = "Top 5 Products"
     
     prod_agg = prod_df.groupby('standardized_name').agg({'Amount': 'sum', 'quantity': 'sum'}).reset_index()
     prod_agg = prod_agg.nlargest(5, 'Amount')
@@ -520,7 +590,7 @@ with col_charts_3:
     ))
 
     fig_prod.update_layout(
-        title=dict(text=f"Top 5 Products", font=dict(color="#e2e8f0", size=16)),
+        title=dict(text=chart_title, font=dict(color="#e2e8f0", size=16)),
         plot_bgcolor='rgba(15, 23, 42, 0.3)',
         paper_bgcolor='rgba(0, 0, 0, 0)',
         font=dict(color='#94a3b8'),
