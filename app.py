@@ -298,10 +298,14 @@ try:
             lambda x: x[:30] + '...' if len(x) > 30 else x
         )
 
-        # FIXED: Create horizontal bar chart with BOTH bars per product (like HTML)
-        fig_products = go.Figure()
+        # Create horizontal bar chart with BOTH bars per product (like HTML)
+        # Using subplots with secondary_x for dual x-axes
+        fig_products = make_subplots(
+            specs=[[{"secondary_x": True}]],
+            horizontal_spacing=0.1
+        )
 
-        # Add Amount bars
+        # Add Amount bars (primary x-axis at bottom)
         fig_products.add_trace(
             go.Bar(
                 y=product_data['name_short'],
@@ -312,10 +316,11 @@ try:
                 marker_line_color='rgba(16, 185, 129, 1)',
                 marker_line_width=2,
                 offsetgroup=0
-            )
+            ),
+            secondary_x=False
         )
 
-        # Add Volume bars
+        # Add Volume bars (secondary x-axis at top)
         fig_products.add_trace(
             go.Bar(
                 y=product_data['name_short'],
@@ -325,9 +330,9 @@ try:
                 marker_color='rgba(245, 158, 11, 0.8)',
                 marker_line_color='rgba(245, 158, 11, 1)',
                 marker_line_width=2,
-                offsetgroup=1,
-                xaxis='x2'
-            )
+                offsetgroup=1
+            ),
+            secondary_x=True
         )
 
         fig_products.update_layout(
@@ -335,21 +340,26 @@ try:
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color='#e2e8f0'),
-            barmode='group',  # FIXED: group mode shows 2 bars per product
+            barmode='group',  # Group mode shows 2 bars per product
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            xaxis=dict(
-                title="<b>Amount (USD)</b>",
-                titlefont=dict(color="#10b981", size=14),
-                gridcolor='rgba(148, 163, 184, 0.1)',
-                side='bottom'
-            ),
-            xaxis2=dict(
-                title="<b>Volume (Quantity)</b>",
-                titlefont=dict(color="#f59e0b", size=14),
-                overlaying='x',
-                side='top'
-            ),
             yaxis=dict(gridcolor='rgba(0,0,0,0)')
+        )
+
+        # Update x-axes
+        fig_products.update_xaxes(
+            title_text="<b>Amount (USD)</b>",
+            title_font=dict(color="#10b981", size=14),
+            gridcolor='rgba(148, 163, 184, 0.1)',
+            secondary_x=False,
+            side='bottom'
+        )
+        fig_products.update_xaxes(
+            title_text="<b>Volume (Quantity)</b>",
+            title_font=dict(color="#f59e0b", size=14),
+            gridcolor='rgba(0,0,0,0)',
+            secondary_x=True,
+            side='top',
+            overlaying='x'
         )
 
         st.plotly_chart(fig_products, use_container_width=True)
