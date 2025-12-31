@@ -39,14 +39,6 @@ st.markdown("""
         border-bottom: 2px solid rgba(139, 92, 246, 0.3);
         margin: 40px 0 20px 0;
     }
-    .metric-container {
-        background: rgba(30, 41, 59, 0.5);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(148, 163, 184, 0.1);
-        border-radius: 16px;
-        padding: 20px;
-        text-align: center;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -102,7 +94,7 @@ try:
         daily_data = df_s1.groupby('Transaction Date').agg({
             'Amount': 'sum',
             'quantity': 'sum'
-        }).reset_index()
+        }).reset_index().sort_values('Transaction Date')
 
         # Create overtime trend chart
         fig_overtime = make_subplots(specs=[[{"secondary_y": True}]])
@@ -146,8 +138,8 @@ try:
         )
 
         fig_overtime.update_xaxes(title_text="Transaction Date", gridcolor='rgba(148, 163, 184, 0.1)')
-        fig_overtime.update_yaxes(title_text="Total Amount (USD)", title_font=dict(color="#1f77b4", size=14), secondary_y=False, gridcolor='rgba(148, 163, 184, 0.1)')
-        fig_overtime.update_yaxes(title_text=f"Quantity ({units_text})", title_font=dict(color="#ff7f0e", size=14), secondary_y=True)
+        fig_overtime.update_yaxes(title_text="<b>Total Amount (USD)</b>", title_font=dict(color="#1f77b4", size=14), secondary_y=False, gridcolor='rgba(148, 163, 184, 0.1)')
+        fig_overtime.update_yaxes(title_text=f"<b>Quantity ({units_text})</b>", title_font=dict(color="#ff7f0e", size=14), secondary_y=True)
 
         st.plotly_chart(fig_overtime, use_container_width=True)
     else:
@@ -179,7 +171,7 @@ try:
         }).reset_index()
         supplier_data = supplier_data.nlargest(4, 'Amount')
 
-        # Create bar chart with dual y-axes
+        # Create bar chart with dual y-axes (exactly like HTML)
         fig_suppliers = make_subplots(specs=[[{"secondary_y": True}]])
 
         fig_suppliers.add_trace(
@@ -189,7 +181,8 @@ try:
                 name='Amount (USD)',
                 marker_color='rgba(139, 92, 246, 0.8)',
                 marker_line_color='rgba(139, 92, 246, 1)',
-                marker_line_width=2
+                marker_line_width=2,
+                yaxis='y'
             ),
             secondary_y=False
         )
@@ -201,7 +194,8 @@ try:
                 name='Volume',
                 marker_color='rgba(59, 130, 246, 0.8)',
                 marker_line_color='rgba(59, 130, 246, 1)',
-                marker_line_width=2
+                marker_line_width=2,
+                yaxis='y2'
             ),
             secondary_y=True
         )
@@ -216,8 +210,17 @@ try:
         )
 
         fig_suppliers.update_xaxes(gridcolor='rgba(148, 163, 184, 0.1)')
-        fig_suppliers.update_yaxes(title_text="Amount (USD)", title_font=dict(color="#8b5cf6"), secondary_y=False, gridcolor='rgba(148, 163, 184, 0.1)')
-        fig_suppliers.update_yaxes(title_text="Volume (Quantity)", title_font=dict(color="#3b82f6"), secondary_y=True)
+        fig_suppliers.update_yaxes(
+            title_text="<b>Amount (USD)</b>",
+            title_font=dict(color="#8b5cf6", size=14),
+            secondary_y=False,
+            gridcolor='rgba(148, 163, 184, 0.1)'
+        )
+        fig_suppliers.update_yaxes(
+            title_text="<b>Volume (Quantity)</b>",
+            title_font=dict(color="#3b82f6", size=14),
+            secondary_y=True
+        )
 
         st.plotly_chart(fig_suppliers, use_container_width=True)
 
@@ -234,16 +237,21 @@ try:
         }).reset_index()
 
         values = category_data['Amount'] if pie_mode == "Amount" else category_data['quantity']
+        total = values.sum()
+        percentages = (values / total * 100).round(1)
+
+        # Create labels with percentages like HTML
+        labels_with_pct = [f"{cat} ({pct}%)" for cat, pct in zip(category_data['category_group'], percentages)]
 
         fig_pie = go.Figure(data=[go.Pie(
-            labels=category_data['category_group'],
+            labels=labels_with_pct,
             values=values,
             marker=dict(
                 colors=['#8b5cf6', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b',
-                       '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f97316']
+                       '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f97316'],
+                line=dict(color='#1e293b', width=3)
             ),
-            textposition='inside',
-            textinfo='percent+label'
+            textposition='auto'
         )])
 
         fig_pie.update_layout(
@@ -257,24 +265,28 @@ try:
 
         st.plotly_chart(fig_pie, use_container_width=True)
 
-        # Store selected category for products chart
-        if 'selected_category' not in st.session_state:
-            st.session_state.selected_category = None
-
     col3, col4 = st.columns(2)
 
     with col3:
-        # Top 5 Products
-        if st.session_state.selected_category:
-            st.markdown(f"#### Top 5 in {st.session_state.selected_category}")
-            df_products = df_s2[df_s2['category_group'] == st.session_state.selected_category]
-        else:
-            st.markdown("#### Top 5 Products")
-            df_products = df_s2
+        st.markdown("#### Top 5 Products")
 
-        if st.button("Clear Category Filter"):
-            st.session_state.selected_category = None
-            st.rerun()
+        # Category filter (since Streamlit can't click pie chart)
+        st.info("💡 Click a category below to filter products (replaces pie chart click)")
+
+        categories = ['All'] + sorted(df_s2['category_group'].unique().tolist())
+        selected_category = st.selectbox(
+            "Filter by category:",
+            options=categories,
+            key="category_filter"
+        )
+
+        # Filter products
+        if selected_category and selected_category != 'All':
+            df_products = df_s2[df_s2['category_group'] == selected_category]
+            st.markdown(f"**Showing: Top 5 in {selected_category}**")
+        else:
+            df_products = df_s2
+            st.markdown("**Showing: Top 5 Products (All Categories)**")
 
         # Aggregate by product
         product_data = df_products.groupby('standardized_name').agg({
@@ -282,37 +294,38 @@ try:
             'quantity': 'sum'
         }).reset_index()
         product_data = product_data.nlargest(5, 'Amount')
-        product_data['standardized_name'] = product_data['standardized_name'].apply(
+        product_data['name_short'] = product_data['standardized_name'].apply(
             lambda x: x[:30] + '...' if len(x) > 30 else x
         )
 
-        # Create horizontal bar chart with dual x-axes
-        fig_products = make_subplots(
-            rows=1, cols=1,
-            specs=[[{"secondary_y": False}]]
-        )
+        # FIXED: Create horizontal bar chart with BOTH bars per product (like HTML)
+        fig_products = go.Figure()
 
+        # Add Amount bars
         fig_products.add_trace(
             go.Bar(
-                y=product_data['standardized_name'],
+                y=product_data['name_short'],
                 x=product_data['Amount'],
                 name='Amount (USD)',
                 orientation='h',
                 marker_color='rgba(16, 185, 129, 0.8)',
                 marker_line_color='rgba(16, 185, 129, 1)',
-                marker_line_width=2
+                marker_line_width=2,
+                offsetgroup=0
             )
         )
 
+        # Add Volume bars
         fig_products.add_trace(
             go.Bar(
-                y=product_data['standardized_name'],
+                y=product_data['name_short'],
                 x=product_data['quantity'],
                 name='Volume',
                 orientation='h',
                 marker_color='rgba(245, 158, 11, 0.8)',
                 marker_line_color='rgba(245, 158, 11, 1)',
                 marker_line_width=2,
+                offsetgroup=1,
                 xaxis='x2'
             )
         )
@@ -322,10 +335,21 @@ try:
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color='#e2e8f0'),
-            barmode='overlay',
+            barmode='group',  # FIXED: group mode shows 2 bars per product
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            xaxis=dict(title="Amount (USD)", titlefont=dict(color="#10b981"), gridcolor='rgba(148, 163, 184, 0.1)'),
-            xaxis2=dict(title="Volume (Quantity)", titlefont=dict(color="#f59e0b"), overlaying='x', side='top', gridcolor='rgba(148, 163, 184, 0.1)')
+            xaxis=dict(
+                title="<b>Amount (USD)</b>",
+                titlefont=dict(color="#10b981", size=14),
+                gridcolor='rgba(148, 163, 184, 0.1)',
+                side='bottom'
+            ),
+            xaxis2=dict(
+                title="<b>Volume (Quantity)</b>",
+                titlefont=dict(color="#f59e0b", size=14),
+                overlaying='x',
+                side='top'
+            ),
+            yaxis=dict(gridcolor='rgba(0,0,0,0)')
         )
 
         st.plotly_chart(fig_products, use_container_width=True)
@@ -333,10 +357,10 @@ try:
     with col4:
         st.markdown("#### Top 4 Companies Trend Over Time")
 
-        # Toggle for trend chart
+        # Toggle for trend chart (exactly like HTML)
         trend_mode = st.radio("View trend by:", ["Amount", "Volume"], horizontal=True, key="trend_toggle")
 
-        # Get top 4 suppliers
+        # Get top 4 suppliers by Amount
         supplier_totals = df_s2.groupby('Supplier')['Amount'].sum().nlargest(4)
         top4_suppliers = supplier_totals.index.tolist()
 
@@ -345,12 +369,13 @@ try:
         trend_data = df_trend.groupby(['Transaction Date', 'Supplier']).agg({
             'Amount': 'sum',
             'quantity': 'sum'
-        }).reset_index()
+        }).reset_index().sort_values('Transaction Date')
 
         fig_trend = go.Figure()
 
         colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b']
 
+        # Only show 4 lines (one per company) based on toggle
         for idx, supplier in enumerate(top4_suppliers):
             supplier_trend = trend_data[trend_data['Supplier'] == supplier]
             y_values = supplier_trend['Amount'] if trend_mode == "Amount" else supplier_trend['quantity']
@@ -365,7 +390,7 @@ try:
                 )
             )
 
-        y_title = "Amount (USD)" if trend_mode == "Amount" else "Volume (Quantity)"
+        y_title = "<b>Amount (USD)</b>" if trend_mode == "Amount" else "<b>Volume (Quantity)</b>"
 
         fig_trend.update_layout(
             height=400,
@@ -374,8 +399,15 @@ try:
             font=dict(color='#e2e8f0'),
             hovermode='x unified',
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            yaxis=dict(title=y_title, titlefont=dict(color="#8b5cf6", size=14), gridcolor='rgba(148, 163, 184, 0.1)'),
-            xaxis=dict(title="Transaction Date", gridcolor='rgba(148, 163, 184, 0.1)')
+            yaxis=dict(
+                title=y_title,
+                title_font=dict(color="#8b5cf6", size=14),
+                gridcolor='rgba(148, 163, 184, 0.1)'
+            ),
+            xaxis=dict(
+                title="<b>Transaction Date</b>",
+                gridcolor='rgba(148, 163, 184, 0.1)'
+            )
         )
 
         st.plotly_chart(fig_trend, use_container_width=True)
@@ -384,3 +416,4 @@ except FileNotFoundError:
     st.error("⚠️ Data file not found. Please ensure 'tetra_pak_final_data_finish.xlsx' is in the same directory as this app.")
 except Exception as e:
     st.error(f"⚠️ Error loading data: {str(e)}")
+    st.exception(e)
